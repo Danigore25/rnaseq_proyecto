@@ -9,22 +9,36 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## ANÁLISIS DE EXPRESIÓN DIFERENCIAL DEL PROYECTO SRP131764
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+# Resumen
+En este proyecto se hará el análisis de expresión diferencial de un proyecto perteneciente a recount3. Con ayuda de paqueterías como ggplot2, pheatmap y ,
+se ilustrará el proyecto para obtener conclusiones.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r cars}
-summary(cars)
-```
+# Introducción 
+El trastorno del espectro autista es una condición que se caracteriza por diferencias en el comportamiento y la comunicación de quienes la padecen. Se presenta en seres humanos sin importar raza, género o condición socioeconómica.
 
-## Including Plots
+En el proyecto SRP131764, o mejor dicho "Gut Microbiota from Human Autism Spectrum Disorder Induces Behavioral Deficits in Mice", se transfirió microbiota vía fecal a ratones silvestres sanos. Los animales con el microbioma alterado presentaron cambios a nivel social, vocal y estereotípico, conductas asociadas con el espectro autista. Asimismo, en los ratones se halló la expresión de ciertos genes relacionados con la actividad cerebral de personas con esta condición.
 
-You can also embed plots, for example:
+En este reporte se hará un análisis de este proyecto a través de recount3.
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+# Método
+Se cargaron las librerías recount3, ggplot2 y pheatmap al inicio del programa 01-analisis.R. Descargamos el proyecto SRP131764 a través de la página de recount. 
+
+
+# Resultados
+Al utilizar la librería ggplot2 encontramos la siguiente gráfica:
+
+
+
+# Conclusiones
+
+
+
+# Bibliografía
+- Página de exploración de estudios de recount3: https://jhubiostatistics.shinyapps.io/recount3-study-explorer/
+
+- Link compartido por Leonardo Collado: https://lcolladotor.github.io/rnaseq_LCG-UNAM_2022/modelos-estad%C3%ADsticos.html#espec%C3%ADficaciones-del-proyecto
+

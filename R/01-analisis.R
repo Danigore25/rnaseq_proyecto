@@ -45,6 +45,8 @@ GITHUB LINK
 
 # 1. Cargar librerías.
 library(recount3)
+library(ggplot2)
+
 
 # 2. Descargar el estudio deseado de la página de recount3.
 
@@ -57,8 +59,28 @@ rse_SRP131764 <- recount3::create_rse_manual(
     type = "gene"
 )
 
-# 3.
-attributes <- expand_sra_attributes(rse_SRP131764)
+# 3. Guardar cuentas de genes presentes en muestras.
+assay(rse_SRP131764, "counts") <- compute_read_counts(rse_SRP131764)
 
+
+# 4. Ver los atributos de las muestras.
+attributes <- expand_sra_attributes(rse_SRP131764)
 colData(attributes)[, grepl("^sra_attribute", colnames(colData(attributes)))]
+
+
+# 5. Guardar las variables de interés. En este caso serán aquellas que corresponden
+# al origen del microbioma humano (proveniente de una persona en el espectro
+# autista o un control), la relación del gen con la muestra y el tejido.
+
+attributes$sra_attribute.mouse_status <- as.factor(attributes$sra_attribute.mouse_status)
+
+attributes$sra_attribute.source_name <- as.factor(attributes$sra_attribute.source_name)
+
+attributes$sra_attribute.tissue <- as.factor(attributes$sra_attribute.tissue)
+
+
+# 6. Analizar las muestras del microbioma, separarlos por un factor.
+attributes$sra_attribute.mouse_status <- factor(ifelse(attributes$sra_attribute.mouse_status == "colonized with Human feces (ASD)", "ASD-feces", "control-feces"))
+
+# table (attributes$sra_attribute.mouse_status)
 

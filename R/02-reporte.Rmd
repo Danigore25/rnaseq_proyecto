@@ -25,16 +25,211 @@ En este reporte se hará un análisis de este proyecto a través de recount3.
 
 
 # Método
-Se cargaron las librerías recount3, ggplot2 y pheatmap al inicio del programa 01-analisis.R. Descargamos el proyecto SRP131764 a través de la página de recount. 
+1. Se cargan las librerías recount3, edgeR,  ggplot2, limma y pheatmap al inicio del programa 01-analisis.R.
+
+```{r}
+library(recount3)
+library(edgeR)
+library(ggplot2)
+library(limma)
+library(pheatmap)
+```
+
+
+2. Escribimos los comandos para la obtención de los siguientes pasos para analizar la expresión diferencial:
+
+- Descargar el estudio deseado de la página de recount3.
+
+```{r}
+rse_SRP131764 <- recount3::create_rse_manual(
+    project = "SRP131764",
+    project_home = "data_sources/sra",
+    organism = "mouse",
+    annotation = "gencode_v23",
+    type = "gene"
+)
+```
+
+
+
+- Guardar cuentas de genes presentes en muestras.
+
+```{r}
+assay(rse_SRP131764, "counts") <- compute_read_counts(rse_SRP131764)
+```
+
+
+
+- Ver los atributos de las muestras.
+
+```{r}
+attributes <- expand_sra_attributes(rse_SRP131764)
+colData(attributes)[, grepl("^sra_attribute", colnames(colData(attributes)))]
+```
+
+
+
+- Guardar las variables de interés (origen fecal, relación del gen con la muestra y y tejido).
+
+```{r}
+attributes$sra_attribute.mouse_status <- as.factor(attributes$sra_attribute.mouse_status)
+
+attributes$sra_attribute.source_name <- as.factor(attributes$sra_attribute.source_name)
+
+attributes$sra_attribute.tissue <- as.factor(attributes$sra_attribute.tissue)
+```
+
+
+
+- Cambiar nombre de tipo de origen de microbioma.
+
+```{r}
+attributes$sra_attribute.mouse_status <- factor(ifelse(attributes$sra_attribute.mouse_status == "colonized with Human feces (ASD)", "ASD-feces", "control-feces"))
+```
+
+
+
+- Comparar cuentas de atributos.
+
+```{r}
+attributes$assigned_gene_prop <- attributes$recount_qc.gene_fc_count_all.assigned / attributes$recount_qc.gene_fc_count_all.total
+summary(attributes$assigned_gene_prop)
+```
+
+
+
+- Plotear atributos.
+
+```{r}
+with(colData(attributes), plot(sra_attribute.mouse_status, assigned_gene_prop))
+```
+
+
+
+- Realizar un filtrado de los datos.
+
+```{r}
+attributes_filtered <- attributes
+hist(attributes_filtered$assigned_gene_prop)
+table(attributes_filtered$assigned_gene_prop < 0.75)
+attributes_filtered <- attributes[, attributes$assigned_gene_prop > 0.75]
+```
+
+
+
+- Eliminar genes según su media de expresión.
+
+```{r}
+expression_means <- rowMeans(assay(attributes_filtered, "counts"))
+attributes_without <- attributes_filtered[expression_means > 0.1, ]
+```
+
+
+
+- Normalizar datos.
+
+```{r}
+dge <- DGEList(
+  counts = assay(attributes_without, "counts"),
+  genes = rowData(attributes_without)
+)
+dge <- calcNormFactors(dge)
+```
+
+
+
+- Expresión diferencial.
+
+```{r}
+ggplot(as.data.frame(colData(attributes_without)), aes(y = assigned_gene_prop, x = sra_attribute.mouse_status)) +
+  geom_boxplot() +
+  theme_bw(base_size = 20) +
+  ylab("Assigned Gene Prop") +
+  xlab("Microbiome origin")
+```
+
+
+
+- Model matrix con atributos de interés.
+
+```{r}
+mod <- model.matrix(~ sra_attribute.mouse_status + sra_attribute.source_name + sra_attribute.tissue + assigned_gene_prop, data = colData(attributes_without))
+colnames(mod)
+```
+
+
+
+- Hacer gráfica voom con limma.
+
+```{r}
+vGene <- voom(dge, mod, plot = TRUE)
+```
+
+
+
+- Ajustar resultados.
+
+```{r}
+eb_results <- eBayes(lmFit(vGene))
+
+de_results <- topTable(eb_results, coef = 2, number = nrow(attributes_without),
+                       sort.by = "none"
+)
+table(de_results$adj.P.Val < 0.05)
+```
+
+
+
+- Visualizar resultados estadísticos.
+
+```{r}
+plotMA(eb_results, coef = 2)
+```
+
+
+
+- Volcano plot.
+
+```{r}
+volcanoplot(eb_results, coef = 2, highlight = 3, names = de_results$gene_name)
+```
+
+
+
+- Ver los 50 genes diferencialmente más expresados.
+
+```{r}
+exprs_heatmap <- vGene$E[rank(de_results$adj.P.Val) <= 50, ]
+
+df <- as.data.frame(colData(attributes_without)[, c("sra_attribute.source_name", "sra_attribute.mouse_status")])
+colnames(df) <- c("Source name", "Fecal origin")
+```
+
+
+- Heatmap
+
+```{r}
+pheatmap(
+  exprs_heatmap,
+  cluster_rows = TRUE,
+  cluster_cols = TRUE,
+  show_rownames = FALSE,
+  show_colnames = FALSE,
+  annotation_col = df
+)
+```
+
+
 
 
 # Resultados
-Al utilizar la librería ggplot2 encontramos la siguiente gráfica:
 
+Por medio de las gráficas que se muestran en el documento podemos observar que los datos se pueden dividir según el origen del microbioma al que corresponden, ya sea por muestras de heces de una persona con algún trastorno del espectro autista o de una persona que no lo posee (es decir, un control). Podemos observar que la expresión de los genes es distinta en esta categoría, así como en la del tipo de tejido. En cuanto al atributo relacionado con el tejido y las muestras humanas con la condición estudiada o sin ella (conocido como "source name"), podemos decir que hay una gran variedad de tipos.
 
 
 # Conclusiones
 
+Tras la realización de este reporte se puede concluir que la expresión diferencial de los genes es un poco ardua de analizar, pero con la ayuda de herramientas como R y las librerías utilizadas.
 
 
 # Bibliografía
